@@ -1,0 +1,20 @@
+# ==============================================================================
+# Konstruktor runner - Node.js variant
+# ==============================================================================
+# docker build -f deploy/docker/Dockerfile.node -t konstruktor-runner:node .
+# ==============================================================================
+
+FROM konstruktor-runner:base
+
+LABEL org.konstruktor.runner="node"
+
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g \
+    typescript \
+    eslint \
+    prettier \
+    ts-node \
+    jest

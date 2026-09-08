@@ -1,0 +1,10 @@
+{"kind": "MessageEvent", "source": "user", "llm_message": {"role": "user", "content": [{"type": "text", "text": "Write hello.py"}]}}
+{"kind": "ActionEvent", "source": "agent", "action": {"command": "create", "path": "hello.py", "file_text": "print('hello')"}, "tool_name": "file_editor"}
+{"kind": "ObservationEvent", "source": "environment", "observation": {"content": [{"type": "text", "text": "File hello.py created successfully"}], "is_error": false, "path": "hello.py"}}
+{"kind": "ActionEvent", "source": "agent", "action": {"command": "run", "command_text": "python hello.py"}, "tool_name": "bash"}
+{"kind": "ObservationEvent", "source": "environment", "observation": {"content": [{"type": "text", "text": "hello"}], "is_error": false}}
+{"kind": "ActionEvent", "source": "agent", "action": {"command": "edit", "path": "hello.py", "old_text": "print('hello')", "new_text": "print('hello world')"}, "tool_name": "file_editor"}
+{"kind": "ObservationEvent", "source": "environment", "observation": {"content": [{"type": "text", "text": "File edited successfully"}], "is_error": false, "path": "hello.py"}}
+{"kind": "ActionEvent", "source": "agent", "action": {"command": "run", "command_text": "python hello.py"}, "tool_name": "bash"}
+{"kind": "ObservationEvent", "source": "environment", "observation": {"content": [{"type": "text", "text": "hello world"}], "is_error": false}}
+{"kind": "MessageEvent", "source": "agent", "llm_message": {"role": "assistant", "content": [{"type": "text", "text": "Task completed successfully"}]}}

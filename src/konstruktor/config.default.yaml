@@ -1,0 +1,32 @@
+llm:
+  model: "claude-sonnet-4-5-20250929"
+  api_key: "${LLM_API_KEY}"
+  base_url: null
+
+limits:
+  timeout: 1800
+  step_timeout: 300
+  max_steps: 100
+  max_retries: 0
+
+agent:
+  mode: "auto"
+  sandbox: "process"
+  skills_dir: null
+
+plan:
+  max_fix_cycles: 2
+  spec_lint_enabled: true
+  max_iterations: 3
+
+logging:
+  dir: "./konstruktor-output"
+  level: "info"
+  format: "jsonl"
+  keep_runs: 10
+
+security:
+  allowed_commands: []
+  # Command policies must remain empty until the OpenHands CLI can enforce them.
+  blocked_commands: []
+  require_approval_for: []

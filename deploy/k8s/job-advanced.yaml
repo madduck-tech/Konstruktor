@@ -1,0 +1,93 @@
+# ==============================================================================
+# Kubernetes Job — multi-architecture: GPU vs CPU, language selection
+# ==============================================================================
+# Shows how to use nodeSelectors, affinity, and tolerations to route
+# tasks to appropriate nodes.
+#
+# Apply:
+#   TASK="Train ML model" IMAGE=konstruktor-runner:full GPU=true \
+#     envsubst < deploy/k8s/job-advanced.yaml | kubectl apply -f -
+# ==============================================================================
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: konstruktor-${TASK_ID:-task}
+  labels:
+    app: konstruktor-runner
+    task-id: ${TASK_ID:-unknown}
+    runner: ${RUNNER_LANG:-python}
+    gpu: "${GPU:-false}"
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: konstruktor-runner
+        runner: ${RUNNER_LANG:-python}
+    spec:
+      restartPolicy: Never
+
+      # ── Node selection strategy ──
+      # Route GPU tasks to GPU nodes
+      ${GPU_NODE_SELECTOR}
+      # Route language-specific tasks to nodes with that toolchain
+      nodeSelector:
+        runner: "${RUNNER_LANG:-python}"
+
+      # Tolerate GPU node taints
+      tolerations:
+        ${GPU_TOLERATIONS}
+
+      # Prefer to schedule on nodes with matching labels
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: runner
+                    operator: In
+                    values:
+                      - "${RUNNER_LANG:-python}"
+                      - "full"
+
+      containers:
+        - name: runner
+          image: ${IMAGE:-konstruktor-runner:python}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KONSTRUKTOR_TASK
+              value: "${TASK}"
+            - name: KONSTRUKTOR_MODE
+              value: "${MODE:-plan}"
+            - name: KONSTRUKTOR_DIR
+              value: /workspace
+            - name: KONSTRUKTOR_TIMEOUT
+              value: "${TIMEOUT:-3600}"
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: konstruktor-secrets
+                  key: llm-api-key
+          resources:
+            requests:
+              cpu: "${CPU_REQUEST:-1}"
+              memory: "${MEM_REQUEST:-2Gi}"
+              ${GPU_RESOURCE_REQUEST}
+            limits:
+              cpu: "${CPU_LIMIT:-4}"
+              memory: "${MEM_LIMIT:-8Gi}"
+              ${GPU_RESOURCE_LIMIT}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            # Optional: mount PV for persistent workspace
+            # - name: project-data
+            #   mountPath: /workspace/project
+
+      volumes:
+        - name: workspace
+          emptyDir:
+            sizeLimit: "${WORKSPACE_SIZE:-10Gi}"

@@ -1,0 +1,59 @@
+name: Konstruktor Task
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Task description'
+        required: true
+        type: string
+      directory:
+        description: 'Working directory'
+        required: false
+        default: '.'
+        type: string
+      model:
+        description: 'LLM model'
+        required: false
+        default: 'claude-sonnet-4-5-20250929'
+        type: string
+      timeout:
+        description: 'Timeout in seconds'
+        required: false
+        default: '1800'
+        type: string
+
+jobs:
+  konstruktor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install OpenHands and Konstruktor
+        run: |
+          pip install openhands
+          pip install konstruktor
+
+      - name: Run Konstruktor task
+        env:
+          KONSTRUKTOR_LLM_API_KEY: ${{ secrets.KONSTRUKTOR_LLM_API_KEY }}
+          KONSTRUKTOR_LLM_MODEL: ${{ inputs.model }}
+        run: |
+          konstruktor run \
+            --task "${{ inputs.task }}" \
+            --directory "${{ inputs.directory }}" \
+            --timeout ${{ inputs.timeout }} \
+            --max-retries 2 \
+            --json
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: konstruktor-output
+          path: konstruktor-output/

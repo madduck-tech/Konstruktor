@@ -1,0 +1,98 @@
+# ==============================================================================
+# Kubernetes Deployment — Queue Worker (long-running, processes task queue)
+# ==============================================================================
+# This deployment watches for new tasks (via ConfigMap or external queue)
+# and spawns Jobs for each one. Use with a message queue (Redis, RabbitMQ)
+# or with a simple polling mechanism.
+#
+# For production, use an operator or K8s Job controller instead.
+# ==============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: konstruktor-queue-worker
+  labels:
+    app: konstruktor-queue-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: konstruktor-queue-worker
+  template:
+    metadata:
+      labels:
+        app: konstruktor-queue-worker
+    spec:
+      serviceAccountName: konstruktor-worker
+      containers:
+        - name: worker
+          image: konstruktor-runner:python
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -c
+            - |
+              import os, subprocess, time, json, yaml
+              from kubernetes import client, config
+
+              config.load_incluster_config()
+              batch = client.BatchV1Api()
+
+              while True:
+                  # Poll for pending tasks from ConfigMap
+                  try:
+                      v1 = client.CoreV1Api()
+                      cm = v1.read_namespaced_config_map("konstruktor-tasks", os.environ.get("NAMESPACE", "default"))
+                      tasks = json.loads(cm.data.get("tasks", "[]"))
+
+                      for task in tasks:
+                          if task.get("status") == "pending":
+                              task_name = task["name"]
+                              print(f"Processing: {task_name}")
+
+                              # Mark as running
+                              # ... update ConfigMap ...
+
+                              # Create Job
+                              job = client.V1Job(...)
+                              batch.create_namespaced_job(namespace=ns, body=job)
+                  except Exception as e:
+                      print(f"Error: {e}")
+
+                  time.sleep(30)
+          env:
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: konstruktor-secrets
+                  key: llm-api-key
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: konstruktor-worker
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: konstruktor-worker
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps", "pods", "pods/log"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: konstruktor-worker
+subjects:
+  - kind: ServiceAccount
+    name: konstruktor-worker
+roleRef:
+  kind: Role
+  name: konstruktor-worker
+  apiGroup: rbac.authorization.k8s.io

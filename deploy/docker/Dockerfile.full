@@ -1,0 +1,35 @@
+# ==============================================================================
+# Konstruktor runner - FULL (all languages, heavy ~2GB)
+# ==============================================================================
+# docker build -f deploy/docker/Dockerfile.full -t konstruktor-runner:full .
+# ==============================================================================
+
+FROM konstruktor-runner:base
+
+LABEL org.konstruktor.runner="full"
+
+# Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g typescript eslint prettier jest \
+    && rm -rf /var/lib/apt/lists/*
+
+# Go
+ENV GO_VERSION=1.24.5
+RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" \
+    | tar -C /usr/local -xz \
+    && ln -s /usr/local/go/bin/go /usr/local/bin/go
+
+# Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && ln -s $HOME/.cargo/bin/cargo /usr/local/bin/cargo \
+    && ln -s $HOME/.cargo/bin/rustc /usr/local/bin/rustc
+
+# Java / Maven
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-21-jdk-headless \
+    maven \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python tooling
+RUN pip install --no-cache-dir pytest ruff mypy black

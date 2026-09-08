@@ -1,0 +1,36 @@
+# ==============================================================================
+# Konstruktor runner - base image (Python + OpenHands + Konstruktor)
+# ==============================================================================
+# docker build -f deploy/docker/Dockerfile.base -t konstruktor-runner:base .
+# ==============================================================================
+
+FROM python:3.12-slim
+
+LABEL org.konstruktor.runner="base"
+LABEL org.konstruktor.version="0.1.0"
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    openssh-client \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# OpenHands CLI
+RUN pip install --no-cache-dir openhands
+
+# Konstruktor
+COPY pyproject.toml config.default.yaml /app/
+COPY src/ /app/src/
+RUN pip install --no-cache-dir /app/
+
+# Working directory for task execution
+WORKDIR /workspace
+
+# Entry point: konstruktor plan (wrapped)
+COPY deploy/docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

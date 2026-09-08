@@ -1,0 +1,18 @@
+# ==============================================================================
+# Konstruktor runner - Python variant
+# ==============================================================================
+# docker build -f deploy/docker/Dockerfile.python -t konstruktor-runner:python .
+# ==============================================================================
+
+FROM konstruktor-runner:base
+
+LABEL org.konstruktor.runner="python"
+
+RUN pip install --no-cache-dir \
+    pytest \
+    ruff \
+    mypy \
+    black \
+    pip-tools \
+    tox \
+    coverage

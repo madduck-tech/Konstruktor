@@ -1,0 +1,78 @@
+# ==============================================================================
+# Kubernetes Job - run a single Konstruktor task
+# ==============================================================================
+# Usage:
+#   export TASK="Fix all linter errors"
+#   export LLM_KEY="sk-..."
+#   envsubst < deploy/k8s/job.yaml | kubectl apply -f -
+#
+# Or via kubectl create job:
+#   kubectl create job konstruktor-task \
+#     --image=konstruktor-runner:python \
+#     -- env KONSTRUKTOR_TASK="Fix auth.py" LLM_API_KEY="sk-..."
+# ==============================================================================
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: konstruktor-${TASK_ID:-task}
+  labels:
+    app: konstruktor-runner
+    task-id: ${TASK_ID:-unknown}
+    runner: ${RUNNER_IMAGE:-python}
+spec:
+  # Keep completed pods for log inspection
+  ttlSecondsAfterFinished: 86400  # 24h
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: konstruktor-runner
+        runner: ${RUNNER_IMAGE:-python}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: runner
+          image: ${IMAGE:-konstruktor-runner:python}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KONSTRUKTOR_TASK
+              value: "${TASK}"
+            - name: KONSTRUKTOR_MODE
+              value: "${MODE:-plan}"
+            - name: KONSTRUKTOR_DIR
+              value: /workspace
+            - name: KONSTRUKTOR_TIMEOUT
+              value: "${TIMEOUT:-1800}"
+            - name: KONSTRUKTOR_MAX_ITERS
+              value: "${MAX_ITERS:-3}"
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: konstruktor-secrets
+                  key: llm-api-key
+            - name: LLM_BASE_URL
+              value: "${LLM_BASE_URL:-}"
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+      volumes:
+        - name: workspace
+          emptyDir:
+            sizeLimit: 10Gi
+---
+# Secrets (create separately: kubectl create secret generic konstruktor-secrets --from-literal=llm-api-key=sk-...)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: konstruktor-secrets
+type: Opaque
+stringData:
+  llm-api-key: "${LLM_API_KEY:-changeme}"
