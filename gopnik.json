@@ -1,0 +1,21 @@
+{
+  "//": "Every command in stage1 was run once, in this project, before being written here.",
+  "//verification": "The one thing this repository cannot work out for you: what checks this project has, and where the change stops being under your control once it ships. artifact_kind: service | library | cli | chart | migration | model-boundary | plugin.",
+  "verification": {
+    "stage1": [
+      "uv run pytest -v",
+      "uv run ruff check src/ tests/"
+    ],
+    "stage2": [
+      "test -d /tmp && tmp=\"$(mktemp -d /tmp/konstruktor-stage2.XXXXXX)\" && trap 'rm -rf \"$tmp\"' EXIT && uv build --wheel --out-dir \"$tmp/dist\" && uv venv \"$tmp/venv\" && uv pip install --python \"$tmp/venv/bin/python\" \"$tmp\"/dist/*.whl && mkdir \"$tmp/work\" && (cd \"$tmp/work\" && \"$tmp/venv/bin/python\" -c 'import konstruktor; assert \"/tmp/konstruktor-stage2.\" in konstruktor.__file__, konstruktor.__file__' && \"$tmp/venv/bin/konstruktor\" --version && KONSTRUKTOR_LLM_API_KEY=stage2-placeholder \"$tmp/venv/bin/konstruktor\" run --dry-run --task 'consumer smoke test' --directory \"$tmp/work\" --output \"$tmp/out\") && if KONSTRUKTOR_LLM_API_KEY=stage2-placeholder \"$tmp/venv/bin/konstruktor\" run --dry-run --task 'negative path test' --directory \"$tmp/missing\" --output \"$tmp/out-negative\"; then exit 1; else test \"$?\" -eq 2; fi"
+    ],
+    "notes": "Stage 2 builds the wheel, installs it with runtime dependencies into a fresh Python 3.12 environment outside the repository, proves imports resolve from that environment, exercises the installed command, and checks its invalid-directory failure path. The placeholder API key is used only for dry-run configuration validation and is not a credential.",
+    "//stage2_unreachable": "Only if there is genuinely nowhere to deploy. Set it to WHY, and every verdict narrows to Stage 1 and quotes that reason. Leaving it blank is rejected: a narrowed verdict that cannot say why is the gap this key exists to make visible.",
+    "//stage2_unreachable_example": "no dev cluster; this is an internal script run by hand",
+    "artifact_kind": "cli",
+    "surfaces": [
+      "installed-cli"
+    ]
+  },
+  "language": "ru"
+}
