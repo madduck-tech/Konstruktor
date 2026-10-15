@@ -42,8 +42,10 @@ konstruktor run -t "Add email validation to the signup form" -d ~/projects/myapp
 
 ### `run`
 
-`run` starts one OpenHands headless session in the selected working directory, waits for it to
-finish, captures its events, and records the resulting Git diff.
+Each `run` attempt starts one OpenHands headless session in the selected working directory, waits
+for it to finish, captures its events, and records the resulting Git diff. Retry-eligible failures
+can start additional attempts with `--max-retries`; each attempt has its own session and run
+directory.
 
 ```bash
 konstruktor run -t "Write unit tests for utils.py" -d ./src
@@ -54,7 +56,8 @@ konstruktor run -t "Run tests and fix failures" --json
 ```
 
 Use `--env KEY=VALUE` to pass additional environment variables to OpenHands. The option can be
-repeated.
+repeated. `LLM_API_KEY` and `LLM_MODEL` are reserved and always come from Konstruktor's
+configuration; `LLM_BASE_URL` is also reserved when `llm.base_url` is configured.
 
 ### `plan`
 
@@ -79,7 +82,7 @@ The timeout applies to the entire plan pipeline. `max_iterations` limits the ini
 plus subsequent fix-and-verify attempts; `max_fix_cycles` separately caps fix cycles. The effective
 fix count is the lower of those limits.
 
-Plan artifacts are written into the target project:
+Successful plan steps write artifacts into the target project:
 
 ```text
 docs/specs/<task-slug>/
@@ -90,10 +93,14 @@ docs/specs/<task-slug>/
 `-- report.md
 ```
 
+If a step fails, later artifacts may be absent. `compliance.md` is written only when the
+verification result contains one valid row for every numbered requirement, acceptance criterion,
+and out-of-scope item.
+
 ### Run Management
 
 ```bash
-konstruktor config          # print the merged configuration with the API key masked
+konstruktor config          # print merged config (the API key is masked only when longer than 8 characters)
 konstruktor status          # show the latest run
 konstruktor status <run-id> # show one run
 konstruktor list            # list completed runs
