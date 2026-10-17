@@ -10,7 +10,6 @@ wheelhouse/
 
 konstruktor-output/
 docs/specs/
-docs/specs/
 
 .env
 *.log
