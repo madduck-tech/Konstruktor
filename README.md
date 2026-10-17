@@ -202,3 +202,6 @@ uv pip install -e ".[dev]"
 pytest -v
 ruff check src/ tests/
 ```
+
+Architecture decisions are recorded in [`docs/adr/`](docs/adr/README.md), which also explains when
+a new decision needs a record and how to write one.
