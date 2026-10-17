@@ -1,5 +1,10 @@
 # ==============================================================================
 # Konstruktor default configuration
+#
+# Annotated copy for humans. The authoritative file is
+# src/konstruktor/config.default.yaml — it is the one packaged into the wheel and
+# read through importlib.resources. This copy must parse to the same values;
+# tests/test_adr_docs.py fails if the two drift apart.
 # ==============================================================================
 
 llm:
@@ -22,7 +27,8 @@ agent:
 plan:
   max_fix_cycles: 2        # max fix-only cycles after failed verification
   spec_lint_enabled: true   # run spec quality review before implementation
-  max_iterations: 3         # legacy: initial implement→verify attempts (unused in new pipeline)
+  max_iterations: 3         # max verify attempts; fix cycles are capped by
+                            # min(max_fix_cycles, max_iterations - 1)
 
 logging:
   dir: "./konstruktor-output"
