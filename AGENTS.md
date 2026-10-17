@@ -66,6 +66,24 @@ pytest -v
 ruff check src/ tests/
 ```
 
+## Decision Records
+
+Architecture decisions live in `docs/adr/`. `docs/adr/README.md` holds the process, the trigger
+criteria, the template, and the index.
+
+Write an ADR when the change is hard to reverse, changes a public contract (CLI surface, exit codes,
+artifact layout, configuration schema, parsed event shapes), concerns security or isolation, or
+picks between alternatives a newcomer would reasonably challenge. Do not write one for bug fixes,
+formatting, refactors with equivalent tests, or routine dependency bumps.
+
+The ADR is opened as `Proposed` before or in the same pull request as the change, and flips to
+`Accepted` in that same pull request. A decision that turns out to be wrong is superseded by a new
+ADR; accepted ADRs are never edited after the fact.
+
+Every factual claim about current behavior cites `file:line`, and the commit that introduced the
+decision is recorded in the `Evidence` field. Where the original rationale was never written down,
+say so in *Rationale provenance* instead of reconstructing it as fact.
+
 ## File Map
 
 ```text
@@ -80,6 +98,7 @@ src/konstruktor/
 `-- security.py     # Runtime security validation
 
 tests/
+|-- test_adr_docs.py
 |-- test_cli.py
 |-- test_config.py
 |-- test_parser.py
@@ -88,6 +107,11 @@ tests/
 |-- test_runner.py
 `-- test_security.py
 ```
+
+## Architecture Decisions
+
+Reasoning behind the current design is recorded in `docs/adr/`, starting with
+`docs/adr/README.md`. The ten foundational records are 0001 through 0010.
 
 ## Plan Artifacts
 
